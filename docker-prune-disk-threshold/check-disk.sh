@@ -34,3 +34,7 @@ if [ "$USAGE" -ge "$THRESHOLD" ]; then
 else
     echo "🟩 [${DATE_TIME}] Disk usage is at $USAGE%, below threshold ($THRESHOLD%)"
 fi
+# Using directly with system cron
+# sudo nano /etc/crontab
+# */5 * * * * root /bin/bash /home/vaggeliskls/github-runner/check_disk_space.sh
+# sudo systemctl restart cron
