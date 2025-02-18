@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_URL: ghcr.io/${{ github.actor }}/text-to-pdf
+  IMAGE_URL: ghcr.io/${{ github.actor }}/tex-to-pdf
 
 jobs:
   generate:
