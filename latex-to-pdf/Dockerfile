@@ -16,4 +16,4 @@ WORKDIR /app
 
 ENV TEX_FILE=cv.tex
 
-CMD ["sh", "-c", "while inotifywait -e modify ${TEX_FILE}; do pdflatex ${TEX_FILE}; done"]
+CMD ["sh", "-c", "pdflatex ${TEX_FILE} && while inotifywait -e modify ${TEX_FILE}; do pdflatex ${TEX_FILE}; done"]
