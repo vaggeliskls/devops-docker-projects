@@ -1,4 +1,4 @@
-name: text to pdf image
+name: tex to pdf image
 
 on:
   workflow_dispatch:
