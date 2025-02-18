@@ -14,22 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set working directory
 WORKDIR /app
 
+COPY --chmod=755 entrypoint.sh /entrypoint.sh
+
 ENV TEX_FILE=cv.tex
 ENV WATCH=false
 
-CMD sh -c '
-  if [ ! -f "$TEX_FILE" ]; then 
-    echo "Error: File $TEX_FILE not found!" >&2
-    exit 1
-  fi
-  
-  pdflatex "$TEX_FILE" || { echo "Initial compilation failed" >&2; exit 1; }
-  
-  if [ "$WATCH" = "true" ]; then 
-    echo "Watching for changes..."
-    while inotifywait -e modify "$TEX_FILE"; do 
-      echo "File changed, recompiling..."
-      pdflatex "$TEX_FILE" || echo "Recompilation failed" >&2
-    done
-  fi
-'
+ENTRYPOINT []
+CMD ["/entrypoint.sh"]
