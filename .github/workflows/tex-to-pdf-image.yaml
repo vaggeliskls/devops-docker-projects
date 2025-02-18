@@ -1,4 +1,4 @@
-name: Text to pdf image
+name: text to pdf image
 
 on:
   workflow_dispatch:
@@ -7,9 +7,9 @@ env:
   IMAGE_URL: ghcr.io/${{ github.actor }}/text-to-pdf
 
 jobs:
-  generate_pdf:
+  generate:
     runs-on: ubuntu-latest
-    name: generate pdf
+    name: generate image
     steps:
       - name: Checkout current repository
         uses: actions/checkout@v4
