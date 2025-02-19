@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     texlive-fonts-extra \
     ghostscript \
     poppler-utils \
-    inotify-tools \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -17,6 +16,7 @@ WORKDIR /app
 COPY --chmod=755 entrypoint.sh /entrypoint.sh
 
 ENV TEX_FILE=cv.tex
+ENV INTERVAL=2
 ENV WATCH=false
 
 ENTRYPOINT []
