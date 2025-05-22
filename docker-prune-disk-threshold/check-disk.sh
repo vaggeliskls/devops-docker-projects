@@ -6,6 +6,9 @@ THRESHOLD=${THRESHOLD:-95}
 # Disk to check (default: /)
 DISK="/"
 
+# Command to run (default: docker system prune -a -f)
+COMMAND=${COMMAND:-"docker system prune -a -f"}
+
 # Webhook URL (optional)
 WEBHOOK_URL=${WEBHOOK_URL:-""}
 
