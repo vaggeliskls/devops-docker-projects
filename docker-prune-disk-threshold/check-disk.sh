@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Set the threshold percentage (e.g., X%)
-THRESHOLD=${THRESHOLD:-95}
+THRESHOLD=${THRESHOLD:-90}
 
 # Disk to check (default: /)
 DISK="/"
@@ -41,3 +41,4 @@ fi
 # sudo nano /etc/crontab
 # */5 * * * * root /bin/bash /home/vaggeliskls/github-runner/check_disk_space.sh
 # sudo systemctl restart cron
+# grep check_disk_space /var/log/syslog
