@@ -150,7 +150,6 @@ Once deployed, you can access:
 | Service | Username | Password |
 |---------|----------|----------|
 | Keycloak Admin | `admin` | `admin123` |
-| OpenSearch | `admin` | `opensearch123` |
 
 ### Customization
 

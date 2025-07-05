@@ -23,8 +23,8 @@ dependencies:
     condition: opensearch.enabled
 
 maintainers:
-  - name: Your Name
-    email: your.email@example.com
+  - name: Vaggelis kls 
+    email: vaggeliskls@gmail.com
 
 keywords:
   - keycloak
