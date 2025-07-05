@@ -1,0 +1,12 @@
+dependencies:
+- name: nginx-ingress-controller
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 11.6.25
+- name: keycloak
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 24.7.4
+- name: opensearch
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 2.0.5
+digest: sha256:507c18fc3422972526ff572c04bf470e03d966bc32702dd20c5936547126b465
+generated: "2025-07-01T23:30:03.989753+03:00"

@@ -1,0 +1,68 @@
+# prettier-ignore
+{{- if .Values.opensearch.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opensearch-security-config
+  namespace: {{ .Release.Namespace }}
+data:
+  opensearch_dashboards.yml: |
+    opensearch_security.auth.type: "openid"
+    opensearch_security.openid.connect_url: {{.Values.extras.keycloakConnectUrl | quote }}
+    opensearch_security.openid.client_id: {{.Values.extras.keycloakClientId | quote }}
+    opensearch_security.openid.client_secret: {{ .Values.extras.keycloakClientSecret | quote }}
+    opensearch_security.openid.base_redirect_url: "{{.Values.extras.hostProtocol }}://{{.Values.extras.host }}"
+    opensearch_security.openid.trust_dynamic_headers: "true"
+    
+    opensearch.requestHeadersAllowlist: ["Authorization", "securitytenant"]
+    opensearch.ssl.verificationMode: none
+    opensearch_security.multitenancy.enabled: true
+    opensearch_security.multitenancy.tenants.preferred: [Private, Global]
+    opensearch_security.readonly_mode.roles: [kibana_read_only]
+    # Use this setting if you are running opensearch-dashboards without https
+    opensearch_security.cookie.secure: false
+    path:
+      data: /bitnami/opensearch-dashboards/data
+    pid:
+      file: /opt/bitnami/opensearch-dashboards/tmp/opensearch-dashboards.pid
+    server:
+      host: 0.0.0.0
+      port: 5601
+    opensearch:
+      hosts: ["https://opensearch:9200"]
+      username: kibanaserver
+      password: {{.Values.opensearch.dashboards.password | quote }}
+
+  config.yml: |
+    _meta:
+      type: "config"
+      config_version: 2
+
+    config:
+      dynamic:
+        authc:
+          basic_internal_auth_domain:
+            http_enabled: true
+            transport_enabled: true
+            order: 0
+            http_authenticator:
+              type: basic
+              challenge: false
+            authentication_backend:
+              type: internal
+          openid_auth_domain:
+            http_enabled: true
+            transport_enabled: true
+            order: 1
+            http_authenticator:
+              type: openid
+              challenge: false
+              config:
+                subject_key: preferred_username
+                roles_key: roles
+                openid_connect_url: {{ .Values.extras.keycloakConnectUrl | quote }}
+                client_id: {{ .Values.extras.keycloakClientId | quote }}
+                client_secret: {{ .Values.extras.keycloakClientSecret | quote }}
+            authentication_backend:
+              type: noop
+{{- end }}

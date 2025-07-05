@@ -1,0 +1,35 @@
+apiVersion: v2
+name: keycloak-opensearch-stack
+description: A Helm umbrella chart for Keycloak, OpenSearch, and Ingress Controller using Bitnami charts
+type: application
+version: 0.1.0
+appVersion: "1.0"
+
+dependencies:
+  - name: nginx-ingress-controller
+    version: "11.6.25"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    alias: ingress-controller
+    condition: ingress-controller.enabled
+
+  - name: keycloak
+    version: "24.7.4"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: keycloak.enabled
+
+  - name: opensearch
+    version: "2.0.5"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: opensearch.enabled
+
+maintainers:
+  - name: Your Name
+    email: your.email@example.com
+
+keywords:
+  - keycloak
+  - opensearch
+  - ingress
+  - authentication
+  - search
+  - bitnami
