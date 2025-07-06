@@ -1,0 +1,181 @@
+# My custom values to make the configuration easier to use and not repeat the same values
+extras:
+  host: &host "my-domain.local"
+  hostProtocol: "http"
+  redirectUri: &redirectUri "http://my-domain.local/redirect_uri"
+  keycloakConnectUrl: &clientUrl "http://keycloak/keycloak-auth/realms/master/.well-known/openid-configuration"
+  keycloakClientId: &clientId "webdav-client"
+  keycloakClientSecret: &clientSecret "vLCEf42cShpAWDy7ciArO6n2iuVGczx51" # This is a placeholder, replace with your actual secret
+
+# Global configuration
+global:
+  # Global image registry to use for all charts
+  imageRegistry: ""
+  # Global storage class for persistent volumes
+  storageClass: ""
+# ------------------------------------------------------------------------
+# Ingress Controller Configuration
+# ------------------------------------------------------------------------
+ingress-controller:
+  enabled: true
+  fullnameOverride: "nginx-ingress-controller"
+  # Service configuration
+  service:
+    type: LoadBalancer
+
+  # Resources
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+# ------------------------------------------------------------------------
+# Keycloak Configuration
+# ------------------------------------------------------------------------
+keycloak:
+  enabled: true
+  fullnameOverride: "keycloak"
+  # Authentication
+  auth:
+    adminUser: admin
+    adminPassword: "admin123"
+
+  httpRelativePath: "/keycloak-auth/"
+
+  image:
+    registry: docker.io
+    repository: bitnami/keycloak
+    tag: 26.3.0-debian-12-r0
+
+  # Database configuration (using PostgreSQL)
+  postgresql:
+    enabled: true
+    auth:
+      postgresPassword: "postgres123"
+      username: "keycloak"
+      password: "keycloak123"
+      database: "keycloak"
+    persistence:
+      enabled: true
+      size: 8Gi
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    ports:
+      http: 80
+      https: 443
+
+  # Ingress configuration
+  ingress:
+    enabled: true
+    ingressClassName: "nginx"
+    hostname: *host
+    hostnameStrict: false
+    path: "/keycloak-auth"
+    pathType: "Prefix"
+    tls: false
+
+  livenessProbe:
+    enabled: true
+  readinessProbe:
+    enabled: true
+  startupProbe:
+    enabled: false
+
+  adminIngress:
+    enabled: false
+
+  # Resources
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+  # Enable metrics
+  metrics:
+    enabled: false
+    serviceMonitor:
+      enabled: false
+# ------------------------------------------------------------------------
+# Webdav Configuration
+# ------------------------------------------------------------------------
+webdav:
+  enabled: true
+  applicationName: "webdav"
+
+  configMap:
+    enabled: true
+    name: "webdav"
+    files:
+      configuration:
+        OAUTH_ENABLED: "true"
+        OIDCClientID: *clientId
+        OIDCClientSecret: *clientSecret
+        OIDCScope: "openid email profile"
+        OIDCProviderMetadataURL: *clientUrl
+        OIDCRedirectURI: *redirectUri
+        OIDCCryptoPassphrase: "your-secure-random-passphrase-here-min-32-chars"
+        OIDCXForwardedHeaders: "X-Forwarded-Host"
+
+  deployment:
+    enabled: true
+    imagePullSecrets: []
+    image:
+      repository: "ghcr.io/vaggeliskls/webdav-server"
+      tag: "test"
+      pullPolicy: Always
+
+    ports:
+      - containerPort: 8080
+        name: http
+        protocol: TCP
+
+    envFrom:
+      webdev:
+        type: configmap
+        nameSuffix: configuration
+
+    # Pod-level security context
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 999
+      runAsGroup: 999
+      fsGroup: 999
+
+    # Container-level security context
+    containerSecurityContext:
+      readOnlyRootFilesystem: false
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+  rbac:
+    enabled: true
+    serviceAccount:
+      enabled: true
+
+  service:
+    enabled: true
+    type: ClusterIP
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+        targetPort: http
+
+  ingress:
+    enabled: true
+    ingressClassName: "nginx"
+    hosts:
+      - host: *host
+        paths:
+          - path: /
+            pathType: Prefix
+            serviceName: webdav
+            servicePort: http

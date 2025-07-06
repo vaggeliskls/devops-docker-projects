@@ -1,0 +1,12 @@
+dependencies:
+- name: nginx-ingress-controller
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 11.6.25
+- name: keycloak
+  repository: oci://registry-1.docker.io/bitnamicharts
+  version: 24.7.4
+- name: application
+  repository: https://stakater.github.io/stakater-charts
+  version: 6.2.1
+digest: sha256:be0cf5407b141d1b0e7d6dddbedfb23a90bf1c48de2556ae2cf292d4d4084801
+generated: "2025-07-06T15:11:51.641974+03:00"

@@ -1,0 +1,157 @@
+{{- if .Values.keycloak.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: keycloak-setup-client
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": "before-hook-creation"
+spec:
+  backoffLimit: 10
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: setup-client
+          image: {{ .Values.keycloak.image.registry }}/{{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Setting up Keycloak OIDC client for OpenSearch Dashboard..."
+
+              # Wait for Keycloak to be ready
+              echo "Waiting for Keycloak to be ready..."
+              until curl -s -f "{{ .Values.extras.keycloakConnectUrl }}" > /dev/null; do
+                echo "Waiting for Keycloak..."
+                sleep 5
+              done
+              echo "Keycloak is ready!"
+
+              # Get admin access token
+              echo "Getting admin access token..."
+              TOKEN_RESPONSE=$(curl -s -X POST "http://keycloak{{ .Values.keycloak.httpRelativePath }}realms/master/protocol/openid-connect/token" \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                -d "grant_type=password&client_id=admin-cli&username={{ .Values.keycloak.auth.adminUser }}&password={{ .Values.keycloak.auth.adminPassword }}")
+
+              ACCESS_TOKEN=$(echo $TOKEN_RESPONSE | grep -o '"access_token":"[^"]*' | cut -d'"' -f4)
+
+              if [ -z "$ACCESS_TOKEN" ]; then
+                echo "Failed to get access token"
+                echo "Response: $TOKEN_RESPONSE"
+                exit 1
+              fi
+
+              echo "Access token obtained successfully"
+
+              # Check if client already exists
+              echo "Checking if client '{{ .Values.extras.keycloakClientId }}' already exists..."
+              CLIENT_LIST=$(curl -s -X GET "http://keycloak{{ .Values.keycloak.httpRelativePath }}admin/realms/master/clients?clientId={{ .Values.extras.keycloakClientId }}" \
+                -H "Authorization: Bearer $ACCESS_TOKEN")
+
+              CLIENT_COUNT=$(echo $CLIENT_LIST | grep -c '"clientId"' || echo "0")
+
+              # Create OpenSearch Dashboard client
+              echo "Creating OpenSearch Dashboard OIDC client..."
+              CREATE_RESPONSE=$(curl -s -w "%{http_code}" -X POST "http://keycloak{{ .Values.keycloak.httpRelativePath }}admin/realms/master/clients" \
+                -H "Authorization: Bearer $ACCESS_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "clientId": "{{ .Values.extras.keycloakClientId }}",
+                  "name": "OpenSearch Dashboards",
+                  "description": "OpenSearch Dashboard OIDC Client",
+                  "enabled": true,
+                  "clientAuthenticatorType": "client-secret",
+                  "redirectUris": ["{{ .Values.extras.hostProtocol }}://{{ .Values.extras.host }}/*"],
+                  "webOrigins": ["{{ .Values.extras.hostProtocol }}://{{ .Values.extras.host }}"],
+                  "protocol": "openid-connect",
+                  "publicClient": false,
+                  "standardFlowEnabled": true,
+                  "implicitFlowEnabled": false,
+                  "directAccessGrantsEnabled": true,
+                  "serviceAccountsEnabled": false,
+                  "attributes": {
+                    "saml.assertion.signature": "false",
+                    "saml.force.post.binding": "false",
+                    "saml.multivalued.roles": "false",
+                    "saml.encrypt": "false",
+                    "saml.server.signature": "false",
+                    "saml.server.signature.keyinfo.ext": "false",
+                    "exclude.session.state.from.auth.response": "false",
+                    "saml_force_name_id_format": "false",
+                    "saml.client.signature": "false",
+                    "tls.client.certificate.bound.access.tokens": "false",
+                    "saml.authnstatement": "false",
+                    "display.on.consent.screen": "false",
+                    "saml.onetimeuse.condition": "false"
+                  }
+                }')
+
+              HTTP_CODE=${CREATE_RESPONSE: -3}
+              if [ "$HTTP_CODE" = "201" ]; then
+                echo "OIDC client created successfully."
+              elif [ "$HTTP_CODE" = "409" ]; then
+                echo "Client already exists, will update configuration."
+              else
+                echo "Failed to create client. HTTP Code: $HTTP_CODE"
+                echo "Response: $CREATE_RESPONSE"
+                exit 1
+              fi
+
+              # Get client UUID to set the secret
+              echo "Getting client UUID..."
+              CLIENT_UUID=$(curl -s -X GET "http://keycloak{{ .Values.keycloak.httpRelativePath }}admin/realms/master/clients?clientId={{ .Values.extras.keycloakClientId }}" \
+                -H "Authorization: Bearer $ACCESS_TOKEN" | grep -o '"id":"[^"]*' | head -1 | cut -d'"' -f4)
+
+              if [ -z "$CLIENT_UUID" ]; then
+                echo "Failed to get client UUID"
+                exit 1
+              fi
+
+              # Set the client secret
+              echo "Setting client secret..."
+              SECRET_RESPONSE=$(curl -s -w "%{http_code}" -X PUT "http://keycloak{{ .Values.keycloak.httpRelativePath }}admin/realms/master/clients/$CLIENT_UUID" \
+                -H "Authorization: Bearer $ACCESS_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "secret": "{{ .Values.extras.keycloakClientSecret }}"
+                }')
+
+              SECRET_HTTP_CODE=${SECRET_RESPONSE: -3}
+              if [ "$SECRET_HTTP_CODE" = "204" ] || [ "$SECRET_HTTP_CODE" = "200" ]; then
+                echo "Client secret set successfully."
+              else
+                echo "Failed to set client secret. HTTP Code: $SECRET_HTTP_CODE"
+                echo "Response: $SECRET_RESPONSE"
+                exit 1
+              fi
+
+              # Get and verify the client secret
+              echo "Retrieving client secret..."
+              CLIENT_SECRET=$(curl -s -X GET "http://keycloak{{ .Values.keycloak.httpRelativePath }}admin/realms/master/clients" \
+                -H "Authorization: Bearer $ACCESS_TOKEN" | grep -A 50 '"clientId":"{{ .Values.extras.keycloakClientId }}"' | grep -o '"secret":"[^"]*' | cut -d'"' -f4)
+
+              if [ "$CLIENT_SECRET" = "null" ] || [ -z "$CLIENT_SECRET" ]; then
+                # Try getting secret via the client-secret endpoint
+                CLIENT_SECRET=$(curl -s -X GET "http://keycloak{{ .Values.keycloak.httpRelativePath }}admin/realms/master/clients/$CLIENT_UUID/client-secret" \
+                  -H "Authorization: Bearer $ACCESS_TOKEN" | grep -o '"value":"[^"]*' | cut -d'"' -f4)
+              fi
+
+              echo ""
+              echo "🎉 Keycloak OIDC Client Setup Complete!"
+              echo "================================================"
+              echo "Client ID: {{ .Values.extras.keycloakClientId }}"
+              echo "Client Secret: $CLIENT_SECRET"
+              echo "OIDC Discovery URL: {{ .Values.extras.keycloakConnectUrl }}"
+              echo "Redirect URL: {{ .Values.extras.hostProtocol }}://{{ .Values.extras.host }}/*"
+              echo ""
+              echo "You can access OpenSearch Dashboards at: {{ .Values.extras.hostProtocol }}://{{ .Values.extras.host }}/"
+              echo ""
+
+              echo "Setup completed successfully!"
+
+{{- end }}

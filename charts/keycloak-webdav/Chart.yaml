@@ -1,0 +1,36 @@
+apiVersion: v2
+name: keycloak-webdav-stack
+description: A Helm umbrella chart for Keycloak, Webdav, and Ingress Controller using Bitnami charts
+type: application
+version: 0.1.0
+appVersion: "1.0"
+
+dependencies:
+  - name: nginx-ingress-controller
+    version: "11.6.25"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    alias: ingress-controller
+    condition: ingress-controller.enabled
+
+  - name: keycloak
+    version: "24.7.4"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: keycloak.enabled
+
+  - name: application
+    version: "6.2.1"
+    repository: https://stakater.github.io/stakater-charts
+    alias: webdav
+    condition: webdav.enabled
+
+maintainers:
+  - name: Vaggelis kls
+    email: vaggeliskls@gmail.com
+
+keywords:
+  - keycloak
+  - webdav
+  - ingress
+  - authentication
+  - search
+  - bitnami
