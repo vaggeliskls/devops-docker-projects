@@ -128,7 +128,7 @@ webdav:
     imagePullSecrets: []
     image:
       repository: "ghcr.io/vaggeliskls/webdav-server"
-      tag: "test"
+      tag: "latest"
       pullPolicy: Always
 
     ports:
