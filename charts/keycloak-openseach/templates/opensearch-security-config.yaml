@@ -61,8 +61,6 @@ data:
                 subject_key: preferred_username
                 roles_key: roles
                 openid_connect_url: {{ .Values.extras.keycloakConnectUrl | quote }}
-                client_id: {{ .Values.extras.keycloakClientId | quote }}
-                client_secret: {{ .Values.extras.keycloakClientSecret | quote }}
             authentication_backend:
               type: noop
 {{- end }}
