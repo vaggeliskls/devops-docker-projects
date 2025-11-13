@@ -17,6 +17,13 @@ EXTRA_MESSAGE=${EXTRA_MESSAGE:-"Machine name"}
 # Get the current date and time
 DATE_TIME=$(date "+%Y-%m-%d %H:%M:%S")
 
+# Debug mode: when set to true, no actual commands or webhooks run
+DEBUG=${DEBUG:-false}
+
+if [ "$DEBUG" = true ]; then
+    echo "[DEBUG MODE ENABLED] No actions will be executed."
+fi
+
 # Get the current disk usage percentage
 USAGE=$(df -h "$DISK" | awk 'NR==2 {print $5}' | sed 's/%//')
 
@@ -24,15 +31,22 @@ USAGE=$(df -h "$DISK" | awk 'NR==2 {print $5}' | sed 's/%//')
 if [ "$USAGE" -ge "$THRESHOLD" ]; then
     MESSAGE="🟥 [${DATE_TIME}] Warning: Disk usage is at ${USAGE}%, exceeding the threshold of ${THRESHOLD}% on ${DISK} disk. ${EXTRA_MESSAGE}"
     echo "$MESSAGE"
-    
     # Send the notification to Microsoft Teams
     if [ -n "$WEBHOOK_URL" ]; then
-        curl -H "Content-Type: application/json" -X POST -d "{\"text\": \"${MESSAGE}\"}" "$WEBHOOK_URL"
+        if [ "$DEBUG" = true ]; then
+            echo "[DEBUG] Would send webhook to: $WEBHOOK_URL"
+        else 
+            curl -H "Content-Type: application/json" -X POST -d "{\"text\": \"${MESSAGE}\"}" "$WEBHOOK_URL"
+        fi
     fi
     
     # Running command
     if [ -n "$COMMAND" ]; then
-        eval "$COMMAND"
+        if [ "$DEBUG" = true ]; then
+            echo "[DEBUG] Would run command: $COMMAND"
+        else 
+            eval "$COMMAND"
+        fi
     fi
 else
     echo "🟩 [${DATE_TIME}] Disk usage is at $USAGE%, below threshold ($THRESHOLD%)"
