@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   check:
     image: ghcr.io/vaggeliskls/disk-usage-notifier:latest
