@@ -1,0 +1,12 @@
+services:
+  digicert-one:
+    image: vaggeliskls/digicert-sign:latest
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: digicert-one-client
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./:/app
