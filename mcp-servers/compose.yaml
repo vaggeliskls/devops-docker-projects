@@ -1,0 +1,25 @@
+services:
+  proxy:
+    image: traefik:v3.6
+    command:
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--api.dashboard=false"
+    ports:
+      - "80:80"
+    volumes:
+      - ./traefik:/etc/traefik/dynamic:ro
+
+  mcp-atlassian:
+    image: mcp/atlassian:latest
+    environment:
+      CONFLUENCE_URL: ${CONFLUENCE_URL}
+      CONFLUENCE_USERNAME: ${CONFLUENCE_USERNAME}
+      CONFLUENCE_API_TOKEN: ${CONFLUENCE_API_TOKEN}
+      JIRA_URL: ${JIRA_URL}
+      JIRA_USERNAME: ${JIRA_USERNAME}
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN}
+      READ_ONLY_MODE: "true"
+    command: ["--transport", "streamable-http", "--port", "8080", "--host", "0.0.0.0"]

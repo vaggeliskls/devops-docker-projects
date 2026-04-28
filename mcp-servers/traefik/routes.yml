@@ -1,0 +1,21 @@
+http:
+  routers:
+    mcp-atlassian:
+      rule: "PathPrefix(`/atlassian`)"
+      entryPoints:
+        - web
+      middlewares:
+        - strip-atlassian
+      service: mcp-atlassian
+
+  middlewares:
+    strip-atlassian:
+      stripPrefix:
+        prefixes:
+          - "/atlassian"
+
+  services:
+    mcp-atlassian:
+      loadBalancer:
+        servers:
+          - url: "http://mcp-atlassian:8080"
