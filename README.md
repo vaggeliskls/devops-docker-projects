@@ -17,7 +17,32 @@ This repository contains multiple useful Docker-related projects that any develo
 8. [Buttercup Webdav Server](https://github.com/vaggeliskls/buttercup-webdav-server): A WebDAV server tailored for Buttercup, enabling secure and efficient password storage.
 
 9. [WebDav server](https://github.com/vaggeliskls/webdav-server): A simple and powerful WebDAV server for file sharing and remote storage management.
-    
+
+10. [MCP Servers](https://github.com/vaggeliskls/devops-docker-projects/tree/main/mcp-servers): Local MCP server exposing Confluence and Jira as tools to Claude via the Model Context Protocol. Runs as a Docker container using `streamable-http` transport.
+
+### Claude MCP Remote Configuration
+
+Once the MCP server is running (see the [mcp-servers README](https://github.com/vaggeliskls/devops-docker-projects/tree/main/mcp-servers)), manage it with the Claude Code CLI:
+
+| Command | Description |
+|---|---|
+| `claude mcp add atlassian --transport http http://localhost/atlassian/mcp` | Add the MCP server |
+| `claude mcp remove atlassian` | Remove the MCP server |
+| `claude mcp list` | List all configured MCP servers |
+
+Or add it manually to `~/.claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "atlassian": {
+      "type": "http",
+      "url": "http://localhost/atlassian/mcp"
+    }
+  }
+}
+```
+
 ## 💡 Contribution
 
 Feel free to contribute by submitting pull requests or opening issues.
