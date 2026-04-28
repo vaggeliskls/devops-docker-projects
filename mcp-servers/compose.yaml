@@ -8,7 +8,7 @@ services:
       - "--entrypoints.websecure.address=:443"
       - "--api.dashboard=false"
     ports:
-      - "80:80"
+      - "${EXPOSED_PORT:-80}:80"
     volumes:
       - ./traefik:/etc/traefik/dynamic:ro
 
