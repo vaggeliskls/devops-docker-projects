@@ -46,6 +46,28 @@ The server will be available at `http://localhost:8080/mcp`.
 
 ---
 
+## Claude MCP CLI
+
+### Add the server to Claude
+
+```sh
+claude mcp add --transport http atlassian http://localhost/atlassian/mcp
+```
+
+### List registered MCP servers
+
+```sh
+claude mcp list
+```
+
+### Remove the server from Claude
+
+```sh
+claude mcp remove atlassian
+```
+
+---
+
 ## Docker commands
 
 | Command | Description |
